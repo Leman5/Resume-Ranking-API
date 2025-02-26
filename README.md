@@ -27,14 +27,14 @@ This project provides an automated solution for ranking resumes based on job des
 ### Installation
 1. Clone the repository:
     ```sh
-    git clone https://github.com/YOUR_USERNAME/resume-ranking-api.git
+    git clone [https://github.com/Leman5/resume-ranking-api.git](https://github.com/Leman5/Resume-Ranking-API.git)
     cd resume-ranking-api
     ```
 
 2. Create a virtual environment:
     ```sh
     python3 -m venv venv
-    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    source venv/bin/activate  
     ```
 
 3. Install dependencies:
@@ -50,6 +50,8 @@ This project provides an automated solution for ranking resumes based on job des
     ```sh
     set GENAI_API_KEY='your-google-genai-api-key'
     ```
+
+    And add it to a config.json file
 
 ---
 
