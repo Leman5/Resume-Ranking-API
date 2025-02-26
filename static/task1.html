@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Extract Ranking Criteria</title>
+  <style>
+    /* Basic styling for the results box */
+    #resultBox {
+      border: 1px solid black; 
+      padding: 10px;
+      margin-top: 20px;
+      width: 80%;       /* Adjust as needed */
+      max-width: 600px; /* Adjust as needed */
+      overflow-x: auto; /* In case the JSON is wide, allow horizontal scroll */
+    }
+  </style>
+</head>
+<body>
+  <h1>Extract Ranking Criteria from Job Description</h1>
+  
+  <form id="extractForm">
+    <label for="file">Upload Job Description (PDF/DOCX):</label>
+    <input type="file" id="file" name="file" accept=".pdf,.docx" required>
+    <button type="submit">Extract Criteria</button>
+  </form>
+  
+  <!-- Results Container -->
+  <div id="resultBox" style="display:none;">
+    <pre id="jsonResult"></pre>
+  </div>
+  
+  <!-- Copy button -->
+  <button id="copyBtn" style="display:none; margin-top:10px;">Copy Results</button>
+
+  <script>
+    document.getElementById('extractForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('file');
+      if (fileInput.files.length === 0) {
+        alert('Please select a file!');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const response = await fetch('/extract-criteria', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          alert('Error extracting criteria. Please check the server logs.');
+          return;
+        }
+
+        const data = await response.json();
+        
+        // Display the JSON in the #jsonResult <pre> block
+        const resultBox = document.getElementById('resultBox');
+        const jsonResult = document.getElementById('jsonResult');
+        jsonResult.textContent = JSON.stringify(data, null, 2);
+        
+        // Show the results box and copy button
+        resultBox.style.display = 'block';
+        document.getElementById('copyBtn').style.display = 'inline-block';
+
+        // Set up copy-to-clipboard functionality
+        document.getElementById('copyBtn').onclick = function() {
+          navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+          alert('Results copied to clipboard!');
+        };
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An unexpected error occurred.');
+      }
+    });
+  </script>
+</body>
+</html>

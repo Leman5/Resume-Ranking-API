@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Score Resumes</title>
+  <style>
+    /* Some basic table styling */
+    table {
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #999;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Score Resumes Against Extracted Criteria</h1>
+  
+  
+  <form id="scoreForm">
+    <label for="criteria">Enter Criteria JSON:</label><br>
+    <textarea id="criteria" name="criteria" rows="5" cols="50" required>
+    </textarea>
+    <br><br>
+
+    <label for="files">Upload Resume Files (PDF/DOCX):</label><br>
+    <input type="file" id="files" name="files" accept=".pdf,.docx" multiple required>
+    <br><br>
+
+    <button type="submit">Score Resumes</button>
+  </form>
+
+  <!-- This section will display the CSV as a table -->
+  <div id="csvDisplay" style="display:none; margin-top:20px;">
+    <h3>CSV Output</h3>
+    <div id="csvTableContainer"></div>
+  </div>
+
+  <div id="downloadSection" style="display:none; margin-top:20px;">
+    <button id="downloadBtn">Download CSV</button>
+  </div>
+
+  <script>
+    // Naive CSV-to-Table parser (doesn't handle quoted commas, etc.)
+    function parseCSVToTable(csvText) {
+      const lines = csvText.trim().split('\n');
+      
+      // Create a table
+      const table = document.createElement('table');
+      
+      // Extract the header row
+      const headerCells = lines[0].split(',');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headerCells.forEach(cell => {
+        const th = document.createElement('th');
+        th.textContent = cell;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Create a tbody for the rest of the rows
+      const tbody = document.createElement('tbody');
+      for (let i = 1; i < lines.length; i++) {
+        const rowCells = lines[i].split(',');
+        const tr = document.createElement('tr');
+        rowCells.forEach(cell => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+
+      return table;
+    }
+
+    document.getElementById('scoreForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const criteriaText = document.getElementById('criteria').value;
+      const filesInput = document.getElementById('files');
+
+      if (!criteriaText || filesInput.files.length === 0) {
+        alert('Please provide criteria JSON and at least one resume file!');
+        return;
+      }
+
+      // Build form data
+      const formData = new FormData();
+      formData.append('criteria_json', criteriaText);
+      for (let i = 0; i < filesInput.files.length; i++) {
+        formData.append('files', filesInput.files[i]);
+      }
+
+      // Call our /score-resumes API
+      const response = await fetch('/score-resumes', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        alert('Error scoring resumes. Please check console or server logs.');
+        return;
+      }
+
+      // We have a CSV file in response
+      const blob = await response.blob();
+
+      // 1) Convert CSV blob to text for displaying on the page
+      const csvText = await blob.text();
+
+      // 2) Create the table and show it
+      const table = parseCSVToTable(csvText);
+      document.getElementById('csvTableContainer').innerHTML = '';
+      document.getElementById('csvTableContainer').appendChild(table);
+      document.getElementById('csvDisplay').style.display = 'block';
+
+      // 3) Also create a download link so user can save the CSV
+      const url = window.URL.createObjectURL(blob);
+      document.getElementById('downloadSection').style.display = 'block';
+      const downloadBtn = document.getElementById('downloadBtn');
+      downloadBtn.onclick = function() {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'resume_scores.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+    });
+  </script>
+</body>
+</html>
